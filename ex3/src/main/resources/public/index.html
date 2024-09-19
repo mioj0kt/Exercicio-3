@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Animais</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .form--register, .form--update {
+            width: 50%;
+            margin: auto;
+            padding: 20px;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+        }
+        .input--register, .input--update {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        .input--button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .input--button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        .input--button-delete {
+            background-color: red;
+        }
+        .input--button-update {
+            background-color: orange;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 align="center">Cadastro de Animais</h2>
+
+    <!-- Formulário de Cadastro -->
+    <form class="form--register" action="/animal/insert" method="post" id="form-add">
+        <label for="nome">Nome do Animal:</label>
+        <input class="input--register" type="text" id="nome" name="nome" placeholder="Nome do animal" required>
+        
+        <label for="idade">Idade (em anos):</label>
+        <input class="input--register" type="number" id="idade" name="idade" placeholder="Idade do animal" required>
+        
+        <label for="especie">Espécie:</label>
+        <input class="input--register" type="text" id="especie" name="especie" placeholder="Espécie do animal" required>
+        
+        <label for="peso">Peso (em kg):</label>
+        <input class="input--register" type="number" step="0.1" id="peso" name="peso" placeholder="Peso do animal" required>
+
+        <input class="input--button" type="submit" value="Cadastrar Animal">
+    </form>
+
+    <!-- Lista de Animais -->
+    <h2 align="center">Lista de Animais</h2>
+    <table id="animal-list">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Idade</th>
+                <th>Espécie</th>
+                <th>Peso</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados serão preenchidos via JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Formulário de Atualização -->
+    <form class="form--update" action="" method="post" id="form-update" style="display: none;">
+        <h3 align="center">Atualizar Animal</h3>
+        <input type="hidden" id="update-id">
+        <label for="update-nome">Nome do Animal:</label>
+        <input class="input--update" type="text" id="update-nome" name="nome" placeholder="Nome do animal" required>
+        
+        <label for="update-idade">Idade (em anos):</label>
+        <input class="input--update" type="number" id="update-idade" name="idade" placeholder="Idade do animal" required>
+        
+        <label for="update-especie">Espécie:</label>
+        <input class="input--update" type="text" id="update-especie" name="especie" placeholder="Espécie do animal" required>
+        
+        <label for="update-peso">Peso (em kg):</label>
+        <input class="input--update" type="number" step="0.1" id="update-peso" name="peso" placeholder="Peso do animal" required>
+
+        <input class="input--button" type="submit" value="Atualizar Animal">
+    </form>
+
+    <script>
+        // Função para carregar todos os animais
+        function loadAnimals() {
+            fetch('/animal/list/nome')
+            .then(response => response.json())
+            .then(data => {
+                const animalList = document.getElementById('animal-list').getElementsByTagName('tbody')[0];
+                animalList.innerHTML = ''; // Limpa a tabela
+                data.forEach(animal => {
+                    const row = animalList.insertRow();
+                    row.insertCell(0).textContent = animal.id;
+                    row.insertCell(1).textContent = animal.nome;
+                    row.insertCell(2).textContent = animal.idade;
+                    row.insertCell(3).textContent = animal.especie;
+                    row.insertCell(4).textContent = animal.peso;
+
+                    // Botão de excluir
+                    const deleteCell = row.insertCell(5);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Excluir';
+                    deleteButton.classList.add('input--button', 'input--button-delete');
+                    deleteButton.onclick = () => deleteAnimal(animal.id);
+                    deleteCell.appendChild(deleteButton);
+
+                    // Botão de atualizar
+                    const updateButton = document.createElement('button');
+                    updateButton.textContent = 'Atualizar';
+                    updateButton.classList.add('input--button', 'input--button-update');
+                    updateButton.onclick = () => showUpdateForm(animal);
+                    deleteCell.appendChild(updateButton);
+                });
+            });
+        }
+
+        // Função para excluir animal
+        function deleteAnimal(id) {
+            fetch(`/animal/delete/${id}`)
+            .then(response => {
+                if (response.ok) {
+                    alert('Animal excluído com sucesso!');
+                    loadAnimals();
+                } else {
+                    alert('Erro ao excluir animal.');
+                }
+            });
+        }
+
+        // Função para mostrar o formulário de atualização
+        function showUpdateForm(animal) {
+            document.getElementById('update-id').value = animal.id;
+            document.getElementById('update-nome').value = animal.nome;
+            document.getElementById('update-idade').value = animal.idade;
+            document.getElementById('update-especie').value = animal.especie;
+            document.getElementById('update-peso').value = animal.peso;
+            document.getElementById('form-update').style.display = 'block';
+        }
+
+        // Manipulador de envio do formulário de cadastro
+        document.getElementById('form-add').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch('/animal/insert', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    alert('Animal cadastrado com sucesso!');
+                    this.reset();
+                    loadAnimals();
+                } else {
+                    alert('Erro ao cadastrar animal.');
+                }
+            });
+        });
+
+        // Manipulador de envio do formulário de atualização
+        document.getElementById('form-update').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('update-id').value;
+            const formData = new FormData(this);
+            fetch(`/animal/update/${id}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    alert('Animal atualizado com sucesso!');
+                    this.style.display = 'none';
+                    loadAnimals();
+                } else {
+                    alert('Erro ao atualizar animal.');
+                }
+            });
+        });
+
+        // Carrega a lista de animais ao abrir a página
+        loadAnimals();
+    </script>
+
+</body>
+</html>
